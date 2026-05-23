@@ -8,9 +8,5 @@ pcap-config = ''
 [host_machine]
 system = 'linux'
 cpu_family = 'loongarch64'
-cpu = '3a5000'
+cpu = 'loongarch64'
 endian = 'little'
-
-[properties]
-implementor_id = 'generic'
-implementor_pn = 'default'
