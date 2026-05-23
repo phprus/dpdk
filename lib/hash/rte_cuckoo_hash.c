@@ -103,6 +103,8 @@ static_assert(RTE_DIM(cmp_jump_key_size) == NUM_KEY_CMP_CASES,
 #include "rte_cmp_x86.h"
 #elif defined(RTE_ARCH_ARM64)
 #include "rte_cmp_arm64.h"
+#elif defined(RTE_ARCH_LOONGARCH)
+#include "rte_cmp_loongarch64.h"
 #else
 #include "rte_cmp_generic.h"
 #endif
