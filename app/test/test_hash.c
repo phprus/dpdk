@@ -231,6 +231,13 @@ test_crc32_hash_alg_equiv(void)
 			printf("Failed checking CRC32_SW against CRC32_ARM64\n");
 			break;
 		}
+
+		/* Check against 8-byte-operand LoongArch CRC32 if available */
+		rte_hash_crc_set_alg(CRC32_LOONGARCH64);
+		if (hash_val != rte_hash_crc(data64, data_len, init_val)) {
+			printf("Failed checking CRC32_SW against CRC32_LOONGARCH64\n");
+			break;
+		}
 	}
 
 	/* Resetting to best available algorithm */
