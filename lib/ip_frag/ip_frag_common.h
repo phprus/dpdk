@@ -14,6 +14,8 @@
 #include <rte_cmp_arm64.h>
 #elif defined(RTE_ARCH_X86)
 #include <rte_cmp_x86.h>
+#elif defined(RTE_ARCH_LOONGARCH)
+#include <rte_cmp_loongarch64.h>
 #endif
 
 #include "rte_ip_frag.h"
@@ -90,7 +92,7 @@ ip_frag_key_invalidate(struct ip_frag_key * key)
 static inline uint64_t
 ip_frag_key_cmp(const struct ip_frag_key * k1, const struct ip_frag_key * k2)
 {
-#if defined(RTE_ARCH_X86) || defined(RTE_ARCH_ARM64)
+#if defined(RTE_ARCH_X86) || defined(RTE_ARCH_ARM64) || defined(RTE_ARCH_LOONGARCH)
 	return (k1->id_key_len != k2->id_key_len) ||
 	       (k1->key_len == IPV4_KEYLEN ? k1->src_dst[0] != k2->src_dst[0] :
 					     rte_hash_k32_cmp_eq(k1, k2, 32));
