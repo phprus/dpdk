@@ -164,6 +164,8 @@ if cpu_instruction_set == 'generic'
         cpu_instruction_set = 'power8'
     elif host_machine.cpu_family().startswith('riscv')
         cpu_instruction_set = 'rv64gc'
+    elif host_machine.cpu_family().startswith('loongarch')
+        cpu_instruction_set = 'loongarch64'
     endif
 endif
 
