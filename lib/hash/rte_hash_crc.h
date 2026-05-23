@@ -24,6 +24,7 @@
 #define CRC32_x64           (1U << 2)
 #define CRC32_SSE42_x64     (CRC32_x64|CRC32_SSE42)
 #define CRC32_ARM64         (1U << 3)
+#define CRC32_LOONGARCH64   (1U << 4)
 
 extern uint8_t rte_hash_crc32_alg;
 
@@ -31,6 +32,8 @@ extern uint8_t rte_hash_crc32_alg;
 #include "rte_crc_arm64.h"
 #elif defined(RTE_ARCH_X86)
 #include "rte_crc_x86.h"
+#elif defined(RTE_ARCH_LOONGARCH)
+#include "rte_crc_loongarch64.h"
 #else
 #include "rte_crc_generic.h"
 #endif
@@ -40,7 +43,7 @@ extern "C" {
 #endif
 
 /**
- * Allow or disallow use of SSE4.2/ARMv8 intrinsics for CRC32 hash
+ * Allow or disallow use of SSE4.2/ARMv8/LoongArch intrinsics for CRC32 hash
  * calculation.
  *
  * @param alg
@@ -49,6 +52,7 @@ extern "C" {
  *   - (CRC32_SSE42) Use SSE4.2 intrinsics if available
  *   - (CRC32_SSE42_x64) Use 64-bit SSE4.2 intrinsic if available (default x86)
  *   - (CRC32_ARM64) Use ARMv8 CRC intrinsic if available (default ARMv8)
+ *   - (CRC32_LOONGARCH64) Use LoongArch CRC intrinsic if available (default LoongArch)
  */
 void
 rte_hash_crc_set_alg(uint8_t alg);

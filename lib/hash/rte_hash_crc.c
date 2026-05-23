@@ -26,6 +26,7 @@ uint8_t rte_hash_crc32_alg = CRC32_SW;
  *   - (CRC32_SSE42) Use SSE4.2 intrinsics if available
  *   - (CRC32_SSE42_x64) Use 64-bit SSE4.2 intrinsic if available (default x86)
  *   - (CRC32_ARM64) Use ARMv8 CRC intrinsic if available (default ARMv8)
+ *   - (CRC32_LOONGARCH64) Use LoongArch CRC intrinsic if available (default LoongArch)
  */
 RTE_EXPORT_SYMBOL(rte_hash_crc_set_alg)
 void
@@ -48,6 +49,11 @@ rte_hash_crc_set_alg(uint8_t alg)
 		rte_hash_crc32_alg = CRC32_ARM64;
 #endif
 
+#if defined RTE_ARCH_LOONGARCH
+	if (rte_cpu_get_flag_enabled(RTE_CPUFLAG_CRC32))
+		rte_hash_crc32_alg = CRC32_LOONGARCH64;
+#endif
+
 	if (rte_hash_crc32_alg == CRC32_SW)
 		HASH_CRC_LOG(WARNING,
 			"Unsupported CRC32 algorithm requested, using CRC32_SW");
@@ -60,6 +66,8 @@ RTE_INIT(rte_hash_crc_init_alg)
 	rte_hash_crc_set_alg(CRC32_SSE42_x64);
 #elif defined(RTE_ARCH_ARM64) && defined(__ARM_FEATURE_CRC32)
 	rte_hash_crc_set_alg(CRC32_ARM64);
+#elif defined(RTE_ARCH_LOONGARCH)
+	rte_hash_crc_set_alg(CRC32_LOONGARCH64);
 #else
 	rte_hash_crc_set_alg(CRC32_SW);
 #endif
