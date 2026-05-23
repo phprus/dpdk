@@ -247,16 +247,16 @@ em_mask_key(void *key, xmm_t mask)
 
 	return vect_and(data, mask);
 }
-#elif defined(RTE_ARCH_LOONGARCH)
+#elif defined(__loongarch_sx)
 static inline xmm_t
 em_mask_key(void *key, xmm_t mask)
 {
-	xmm_t data = vect_load_128(key);
+	xmm_t data = __lsx_vld(key, 0);
 
-	return vect_and(data, mask);
+	return __lsx_vand_v(data, mask);
 }
 #else
-#error No vector engine (SSE, NEON, ALTIVEC) available, check your toolchain
+#error No vector engine (SSE, NEON, ALTIVEC, LSX) available, check your toolchain
 #endif
 
 /* Performing hash-based lookups. 8< */
