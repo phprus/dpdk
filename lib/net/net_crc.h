@@ -44,4 +44,9 @@ rte_crc16_ccitt_neon_handler(const uint8_t *data, uint32_t data_len);
 uint32_t
 rte_crc32_eth_neon_handler(const uint8_t *data, uint32_t data_len);
 
+/* LoongArch64 */
+
+uint32_t
+rte_crc32_eth_loongarch64_handler(const uint8_t *data, uint32_t data_len);
+
 #endif /* _NET_CRC_H_ */
