@@ -152,6 +152,7 @@ foreach subpath:subdirs
         name = drv
         annotate_locks = true
         sources = []
+        sources_lasx = []
         sources_avx2 = []
         sources_avx512 = []
         headers = []
@@ -301,6 +302,16 @@ foreach subpath:subdirs
                         c_args: [cflags, cc_avx512_flags])
                 objs += avx512_lib.extract_objects(sources_avx512)
             endif
+        # handle lasx source files
+        elif arch_subdir == 'loongarch'
+            if sources_lasx.length() > 0
+                lasx_lib = static_library(lib_name + '_lasx_lib',
+                        sources_lasx,
+                        dependencies: static_deps,
+                        include_directories: includes,
+                        c_args: [cflags, cc_lasx_flags])
+                objs += lasx_lib.extract_objects(sources_lasx)
+            endif
         endif
 
         # generate pmdinfo sources by building a temporary
@@ -339,7 +350,7 @@ foreach subpath:subdirs
                 command: [gen_version_map, '--linker', link_mode,
                           '--abi-version', abi_version_file, '--output', '@OUTPUT@',
                           '--source', '@INPUT@'],
-                input: sources + sources_avx2 + sources_avx512,
+                input: sources + sources_lasx + sources_avx2 + sources_avx512,
                 output: '_'.join([class, name, 'exports.map']))
         lk_deps = [version_map]
 
