@@ -77,6 +77,10 @@ rte_compressdev_capability_get(uint8_t dev_id,
  * cleared if the processing is done during the enqueue (default).
  * Applications can use this as a hint for tuning.
  */
+#define	RTE_COMPDEV_FF_CPU_LSX			(1ULL << 7)
+/**< Utilises CPU LSX instructions */
+#define	RTE_COMPDEV_FF_CPU_LASX			(1ULL << 8)
+/**< Utilises CPU LASX instructions */
 
 /**
  * Get the name of a compress device feature flag.
