@@ -120,6 +120,7 @@ foreach l:libraries
     use_function_versioning = false
     annotate_locks = true
     sources = []
+    sources_lasx = []
     sources_avx2 = []
     sources_avx512 = []
     cflags_avx512 = [] # extra cflags for the avx512 code, e.g. extra avx512 feature flags
@@ -260,6 +261,16 @@ foreach l:libraries
                     include_directories: includes,
                     c_args: [cflags, cflags_avx512, cc_avx512_flags])
             objs += avx512_lib.extract_objects(sources_avx512)
+        endif
+    # handle lasx source files
+    elif arch_subdir == 'loongarch'
+        if sources_lasx.length() > 0
+            lasx_lib = static_library(libname + '_lasx_lib',
+                    sources_lasx,
+                    dependencies: static_deps,
+                    include_directories: includes,
+                    c_args: [cflags, cc_lasx_flags])
+            objs += lasx_lib.extract_objects(sources_lasx)
         endif
     endif
 
