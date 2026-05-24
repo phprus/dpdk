@@ -423,6 +423,8 @@ rte_lpm_lookupx4(const struct rte_lpm *lpm, xmm_t ip, uint32_t hop[4],
 #include "rte_lpm_sse.h"
 #elif defined(RTE_ARCH_RISCV) && defined(RTE_RISCV_FEATURE_V)
 #include "rte_lpm_rvv.h"
+#elif defined(RTE_ARCH_LOONGARCH)
+#include "rte_lpm_lsx.h"
 #else
 #include "rte_lpm_scalar.h"
 #endif
