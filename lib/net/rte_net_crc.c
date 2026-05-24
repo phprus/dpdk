@@ -40,7 +40,7 @@ struct rte_net_crc {
 
 static struct {
 	rte_net_crc_handler f[RTE_NET_CRC_REQS];
-} handlers[RTE_NET_CRC_AVX512 + 1];
+} handlers[RTE_NET_CRC_LOONGARCH64 + 1];
 
 /* Scalar handling */
 
@@ -174,6 +174,11 @@ neon_pmull_init(void)
 #endif
 }
 
+/* LoongArch handling */
+
+#define LOONGARCH64_CRC32_CPU_SUPPORTED \
+	rte_cpu_get_flag_enabled(RTE_CPUFLAG_CRC32)
+
 static void
 handlers_init(enum rte_net_crc_alg alg)
 {
@@ -203,6 +208,15 @@ handlers_init(enum rte_net_crc_alg alg)
 		if (NEON_PMULL_CPU_SUPPORTED) {
 			handlers[alg].f[RTE_NET_CRC16_CCITT] = rte_crc16_ccitt_neon_handler;
 			handlers[alg].f[RTE_NET_CRC32_ETH] = rte_crc32_eth_neon_handler;
+			break;
+		}
+#endif
+		/* fall-through */
+	case RTE_NET_CRC_LOONGARCH64:
+#ifdef RTE_ARCH_LOONGARCH
+		if (LOONGARCH64_CRC32_CPU_SUPPORTED) {
+			handlers[alg].f[RTE_NET_CRC16_CCITT] = rte_crc16_ccitt_handler;
+			handlers[alg].f[RTE_NET_CRC32_ETH] = rte_crc32_eth_loongarch64_handler;
 			break;
 		}
 #endif
@@ -248,6 +262,9 @@ struct rte_net_crc *rte_net_crc_set_alg(enum rte_net_crc_alg alg, enum rte_net_c
 			return crc;
 		}
 		break;
+	case RTE_NET_CRC_LOONGARCH64:
+		crc->alg = RTE_NET_CRC_LOONGARCH64;
+		return crc;
 	case RTE_NET_CRC_SCALAR:
 		/* fall-through */
 	default:
@@ -279,4 +296,5 @@ RTE_INIT(rte_net_crc_init)
 	handlers_init(RTE_NET_CRC_NEON);
 	handlers_init(RTE_NET_CRC_SSE42);
 	handlers_init(RTE_NET_CRC_AVX512);
+	handlers_init(RTE_NET_CRC_LOONGARCH64);
 }
