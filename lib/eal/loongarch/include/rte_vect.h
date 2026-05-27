@@ -73,6 +73,32 @@ lsx_set_d(int64_t e1, int64_t e0)
 }
 
 
+static __rte_always_inline __m128i
+lsx_vshuffle_b(__m128i a, __m128i b)
+{
+	a = __lsx_vshuf_b(a, a, __lsx_vandi_b(b, 15));
+	return __lsx_vandn_v(__lsx_vslti_b(b, 0), a);
+}
+
+
+#define lsx_valignr_b(a, b, count)						\
+__extension__ ({								\
+	__m128i dest;								\
+	if ((count) > 31)							\
+		dest = __lsx_vreplgr2vr_b(0);					\
+	else if ((count) > 15)							\
+		dest = __lsx_vbsrl_v((a), ((count)&15));			\
+	else if ((count) == 0)							\
+		dest = (b);							\
+	else if ((count) == 8)							\
+		dest = __lsx_vpermi_w((a), (b), 0x4E);				\
+	else									\
+		dest = __lsx_vor_v(__lsx_vbsll_v((a), (16-((count)&15))),	\
+				__lsx_vbsrl_v((b), ((count)&15)));		\
+	(__m128i)dest;								\
+})
+
+
 #ifdef __loongarch_asx
 
 typedef __m256i ymm_t;
@@ -172,6 +198,78 @@ static __rte_always_inline __m256i
 lasx_set_d(int64_t  e3, int64_t  e2, int64_t  e1, int64_t  e0)
 {
 	return (__m256i)((v4i64){ e0, e1, e2,  e3 });
+}
+
+
+static __rte_always_inline __m256i
+lasx_xvshuffle_b(__m256i a, __m256i b)
+{
+	a = __lasx_xvshuf_b(a, a, __lasx_xvandi_b(b, 15));
+	return __lasx_xvandn_v(__lasx_xvslti_b(b, 0), a);
+}
+
+
+#define MB(mask, i) -((mask >> i) & 1)
+
+static __rte_always_inline __m256i
+lasx_xvbitselmaski_h(int mask)
+{
+	return lasx_set_h(
+		MB(mask, 7), MB(mask, 6), MB(mask, 5), MB(mask, 4),
+		MB(mask, 3), MB(mask, 2), MB(mask, 1), MB(mask, 0),
+		MB(mask, 7), MB(mask, 6), MB(mask, 5), MB(mask, 4),
+		MB(mask, 3), MB(mask, 2), MB(mask, 1), MB(mask, 0));
+}
+
+static __rte_always_inline __m256i
+lasx_xvbitselmaski_w(int mask)
+{
+	return lasx_set_w(
+		MB(mask, 7), MB(mask, 6), MB(mask, 5), MB(mask, 4),
+		MB(mask, 3), MB(mask, 2), MB(mask, 1), MB(mask, 0));
+}
+
+#undef MB
+
+
+#define lasx_xvpickve2gr_b(a, idx) \
+	(int)((__lasx_xvpickve2gr_wu((a), (idx) / 4) >> ((idx) % 4) * 8) & 0xFF)
+
+#define lasx_xvalignr_b(a, b, count)						\
+__extension__ ({								\
+	__m256i dest;								\
+	if ((count) > 31)							\
+		dest = __lasx_xvreplgr2vr_w(0);					\
+	else if ((count) > 15)							\
+		dest = __lasx_xvbsrl_v((a), ((count)&15));			\
+	else if ((count) == 0)							\
+		dest = (b);							\
+	else if ((count) == 8)							\
+		dest = __lasx_xvpermi_w((a), (b), 0x4E);			\
+	else									\
+		dest = __lasx_xvor_v(__lasx_xvbsll_v((a), (16-((count)&15))),	\
+				__lasx_xvbsrl_v((b), ((count)&15)));		\
+	(__m256i)dest;								\
+})
+
+
+#define lasx_xvsllwil_wu_hu_128(a, imm) \
+	__lasx_xvsllwil_wu_hu(__lasx_xvpermi_d(__lasx_cast_128(a), 0xd8), (imm))
+
+
+static __rte_always_inline int
+lasx_xvmskltz2gr_b(__m256i a)
+{
+	a = __lasx_xvmskltz_b(a);
+	return (__lasx_xvpickve2gr_w(a, 0) | (__lasx_xvpickve2gr_w(a, 4) << 16));
+}
+
+
+static __rte_always_inline int
+lasx_xvmskltz2gr_w(__m256i a)
+{
+	a = __lasx_xvmskltz_w(a);
+	return (__lasx_xvpickve2gr_w(a, 0) | (__lasx_xvpickve2gr_w(a, 4) << 4));
 }
 
 #endif /* __loongarch_asx */
