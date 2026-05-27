@@ -36,6 +36,10 @@
 #include "../common/rx_vec_x86.h"
 #endif
 
+#ifdef RTE_ARCH_LOONGARCH
+#include "../common/rx_vec_loongarch64.h"
+#endif
+
 #define DEFAULT_TX_RS_THRESH   32
 #define DEFAULT_TX_FREE_THRESH 32
 
@@ -1019,7 +1023,7 @@ i40e_xmit_pkts_simple(void *tx_queue,
 	return ci_xmit_pkts_simple(tx_queue, tx_pkts, nb_pkts);
 }
 
-#ifndef RTE_ARCH_X86
+#if !defined(RTE_ARCH_X86) && !defined(RTE_ARCH_LOONGARCH)
 static uint16_t
 i40e_xmit_pkts_vec(void *tx_queue, struct rte_mbuf **tx_pkts,
 		   uint16_t nb_pkts)
@@ -1100,6 +1104,16 @@ static const struct ci_tx_path_info i40e_tx_path_infos[] = {
 		.features = {
 			.tx_offloads = I40E_TX_VECTOR_OFFLOADS,
 			.simd_width = RTE_VECT_SIMD_128,
+		},
+		.pkt_prep = i40e_simple_prep_pkts,
+	},
+#elif defined(RTE_ARCH_LOONGARCH)
+	[I40E_TX_LASX] = {
+		.pkt_burst = i40e_xmit_pkts_vec_lasx,
+		.info = "Vector LASX",
+		.features = {
+			.tx_offloads = I40E_TX_VECTOR_OFFLOADS,
+			.simd_width = RTE_VECT_SIMD_256,
 		},
 		.pkt_prep = i40e_simple_prep_pkts,
 	},
@@ -1544,7 +1558,9 @@ i40e_dev_supported_ptypes_get(struct rte_eth_dev *dev, size_t *no_of_elements)
 	    ad->rx_func_type == I40E_RX_AVX512_SCATTERED ||
 	    ad->rx_func_type == I40E_RX_AVX512 ||
 	    ad->rx_func_type == I40E_RX_AVX2_SCATTERED ||
-	    ad->rx_func_type == I40E_RX_AVX2) {
+	    ad->rx_func_type == I40E_RX_AVX2 ||
+	    ad->rx_func_type == I40E_RX_LASX_SCATTERED ||
+	    ad->rx_func_type == I40E_RX_LASX) {
 		*no_of_elements = RTE_DIM(ptypes);
 		return ptypes;
 	}
@@ -2987,6 +3003,27 @@ static const struct ci_rx_path_info i40e_rx_path_infos[] = {
 			.bulk_alloc = true
 		}
 	},
+#elif defined(RTE_ARCH_LOONGARCH)
+	[I40E_RX_LASX] = {
+		.pkt_burst = i40e_recv_pkts_vec_lasx,
+		.info = "Vector LASX",
+		.features = {
+			.rx_offloads = I40E_RX_VECTOR_OFFLOADS,
+			.simd_width = RTE_VECT_SIMD_256,
+			.bulk_alloc = true
+		}
+	},
+	[I40E_RX_LASX_SCATTERED] = {
+		.pkt_burst = i40e_recv_scattered_pkts_vec_lasx,
+		.info = "Vector LASX Scattered",
+		.features = {
+			.rx_offloads = I40E_RX_VECTOR_OFFLOADS,
+			.simd_width = RTE_VECT_SIMD_256,
+			.scattered = true,
+			.bulk_alloc = true
+		}
+	},
+
 #endif
 };
 
@@ -3110,7 +3147,7 @@ i40e_set_tx_function(struct rte_eth_dev *dev)
 		goto out;
 
 	if (ad->tx_vec_allowed) {
-#ifdef RTE_ARCH_X86
+#if defined(RTE_ARCH_X86) || defined(RTE_ARCH_LOONGARCH)
 		req_features.simd_width = i40e_get_max_simd_bitwidth();
 #else
 		req_features.simd_width = rte_vect_get_max_simd_bitwidth();
@@ -3131,7 +3168,8 @@ out:
 	if (ad->tx_func_type == I40E_TX_SCALAR_SIMPLE ||
 			ad->tx_func_type == I40E_TX_NEON ||
 			ad->tx_func_type == I40E_TX_ALTIVEC ||
-			ad->tx_func_type == I40E_TX_AVX2)
+			ad->tx_func_type == I40E_TX_AVX2 ||
+			ad->tx_func_type == I40E_TX_LASX)
 		dev->recycle_tx_mbufs_reuse = i40e_recycle_tx_mbufs_reuse_vec;
 
 	ad->tx_vec_allowed =
@@ -3236,6 +3274,13 @@ enum rte_vect_max_simd
 i40e_get_max_simd_bitwidth(void)
 {
 	return ci_get_x86_max_simd_bitwidth();
+}
+
+#elif defined(RTE_ARCH_LOONGARCH)
+enum rte_vect_max_simd
+i40e_get_max_simd_bitwidth(void)
+{
+	return ci_get_loongarch64_max_simd_bitwidth();
 }
 
 #else
