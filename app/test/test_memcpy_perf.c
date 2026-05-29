@@ -54,7 +54,7 @@ static size_t buf_sizes[TEST_VALUE_RANGE];
 /* Data is aligned on this many bytes (power of 2) */
 #ifdef __AVX512F__
 #define ALIGNMENT_UNIT          64
-#elif defined __AVX2__
+#elif defined __AVX2__ || defined __loongarch_asx
 #define ALIGNMENT_UNIT          32
 #else
 #define ALIGNMENT_UNIT          16
