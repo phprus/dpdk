@@ -16,6 +16,8 @@
 
 #if defined(RTE_ARCH_X86)
 #include "rte_member_x86.h"
+#elif defined(RTE_ARCH_LOONGARCH)
+#include "rte_member_loongarch64.h"
 #endif
 
 /* Search bucket for entry with tmp_sig and update set_id */
@@ -121,6 +123,13 @@ rte_member_create_ht(struct rte_member_setsum *ss,
 		ss->sig_cmp_fn = RTE_MEMBER_COMPARE_AVX2;
 	else
 #endif
+#if defined(RTE_ARCH_LOONGARCH)
+	if (rte_cpu_get_flag_enabled(RTE_CPUFLAG_LASX) &&
+			RTE_MEMBER_BUCKET_ENTRIES == 16 &&
+			rte_vect_get_max_simd_bitwidth() >= RTE_VECT_SIMD_256)
+		ss->sig_cmp_fn = RTE_MEMBER_COMPARE_LASX;
+	else
+#endif
 		ss->sig_cmp_fn = RTE_MEMBER_COMPARE_SCALAR;
 
 	MEMBER_LOG(DEBUG, "Hash table based filter created, "
@@ -189,6 +198,15 @@ rte_member_lookup_ht(const struct rte_member_setsum *ss,
 			return 1;
 		break;
 #endif
+#if defined(RTE_ARCH_LOONGARCH) && defined(__loongarch_asx)
+	case RTE_MEMBER_COMPARE_LASX:
+		if (search_bucket_single_lasx(prim_bucket, tmp_sig, buckets,
+				set_id) ||
+				search_bucket_single_lasx(sec_bucket, tmp_sig,
+					buckets, set_id))
+			return 1;
+		break;
+#endif
 	default:
 		if (search_bucket_single(prim_bucket, tmp_sig, buckets,
 				set_id) ||
@@ -231,6 +249,17 @@ rte_member_lookup_bulk_ht(const struct rte_member_setsum *ss,
 				set_id[i] = RTE_MEMBER_NO_MATCH;
 			break;
 #endif
+#if defined(RTE_ARCH_LOONGARCH) && defined(__loongarch_asx)
+		case RTE_MEMBER_COMPARE_LASX:
+			if (search_bucket_single_lasx(prim_buckets[i],
+					tmp_sig[i], buckets, &set_id[i]) ||
+				search_bucket_single_lasx(sec_buckets[i],
+					tmp_sig[i], buckets, &set_id[i]))
+				num_matches++;
+			else
+				set_id[i] = RTE_MEMBER_NO_MATCH;
+			break;
+#endif
 		default:
 			if (search_bucket_single(prim_buckets[i], tmp_sig[i],
 					buckets, &set_id[i]) ||
@@ -263,6 +292,15 @@ rte_member_lookup_multi_ht(const struct rte_member_setsum *ss,
 			&num_matches, match_per_key, set_id);
 		if (num_matches < match_per_key)
 			search_bucket_multi_avx(sec_bucket, tmp_sig,
+				buckets, &num_matches, match_per_key, set_id);
+		return num_matches;
+#endif
+#if defined(RTE_ARCH_LOONGARCH) && defined(__loongarch_asx)
+	case RTE_MEMBER_COMPARE_LASX:
+		search_bucket_multi_lasx(prim_bucket, tmp_sig, buckets,
+			&num_matches, match_per_key, set_id);
+		if (num_matches < match_per_key)
+			search_bucket_multi_lasx(sec_bucket, tmp_sig,
 				buckets, &num_matches, match_per_key, set_id);
 		return num_matches;
 #endif
@@ -307,6 +345,21 @@ rte_member_lookup_multi_bulk_ht(const struct rte_member_setsum *ss,
 				&set_ids[i*match_per_key]);
 			if (match_cnt_tmp < match_per_key)
 				search_bucket_multi_avx(sec_buckets[i],
+					tmp_sig[i], buckets, &match_cnt_tmp,
+					match_per_key,
+					&set_ids[i*match_per_key]);
+			match_count[i] = match_cnt_tmp;
+			if (match_cnt_tmp != 0)
+				num_matches++;
+			break;
+#endif
+#if defined(RTE_ARCH_LOONGARCH) && defined(__loongarch_asx)
+		case RTE_MEMBER_COMPARE_LASX:
+			search_bucket_multi_lasx(prim_buckets[i], tmp_sig[i],
+				buckets, &match_cnt_tmp, match_per_key,
+				&set_ids[i*match_per_key]);
+			if (match_cnt_tmp < match_per_key)
+				search_bucket_multi_lasx(sec_buckets[i],
 					tmp_sig[i], buckets, &match_cnt_tmp,
 					match_per_key,
 					&set_ids[i*match_per_key]);
@@ -365,6 +418,14 @@ try_update(struct member_ht_bucket *buckets, uint32_t prim, uint32_t sec,
 	case RTE_MEMBER_COMPARE_AVX2:
 		if (update_entry_search_avx(prim, sig, buckets, set_id) ||
 				update_entry_search_avx(sec, sig, buckets,
+					set_id))
+			return 0;
+		break;
+#endif
+#if defined(RTE_ARCH_LOONGARCH) && defined(__loongarch_asx)
+	case RTE_MEMBER_COMPARE_LASX:
+		if (update_entry_search_lasx(prim, sig, buckets, set_id) ||
+				update_entry_search_lasx(sec, sig, buckets,
 					set_id))
 			return 0;
 		break;
