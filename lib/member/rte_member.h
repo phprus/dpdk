@@ -113,6 +113,7 @@ enum rte_member_setsum_type {
 enum rte_member_sig_compare_function {
 	RTE_MEMBER_COMPARE_SCALAR = 0,
 	RTE_MEMBER_COMPARE_AVX2,
+	RTE_MEMBER_COMPARE_LASX,
 	RTE_MEMBER_COMPARE_NUM
 };
 
