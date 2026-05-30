@@ -15,12 +15,13 @@ x86_64=true
 ppc_64=true
 arm_32=true
 arm_64=true
+loongarch64=true
 
 print_usage()
 {
 	echo "Usage: $(basename $0) [-h] [-v] tags|cscope|gtags|etags [config]"
 	echo "Examples of valid configs are: "
-	echo "x86_64-bsd, arm64-linux, ppc_64-linux"
+	echo "x86_64-bsd, arm64-linux, ppc_64-linux, loongarch64-linux"
 }
 
 # Move to the root of the git tree
@@ -47,13 +48,17 @@ skip_sse="( -name *_sse*.[chS] ) -prune -o"
 skip_avx="( -name *_avx*.[chS] ) -prune -o"
 skip_neon="( -name *_neon*.[chS] ) -prune -o"
 skip_altivec="( -name *_altivec*.[chS] ) -prune -o"
+skip_lsx="( -name *_lsx*.[chS] ) -prune -o"
+skip_lasx="( -name *_lasx*.[chS] ) -prune -o"
 skip_arm64="( -name *arm64*.[chS] ) -prune -o"
 skip_x86="( -name *x86*.[chS] ) -prune -o"
+skip_loongarch64="( -name *loongarch64*.[chS] ) -prune -o"
 skip_32b_files="( -name *_32.h ) -prune -o"
 skip_64b_files="( -name *_64.h ) -prune -o"
 
 skiplist="$skip_bsd $skip_linux $skip_arch $skip_sse $skip_avx \
-		 $skip_neon $skip_altivec $skip_x86 $skip_arm64"
+		 $skip_neon $skip_altivec $skip_lsx $skip_lasx \
+		 $skip_x86 $skip_arm64 $skip_loongarch64"
 
 find_sources()
 {
@@ -123,6 +128,14 @@ ppc_64_sources()
 	find_sources "$source_dirs" '*altivec*.[chS]'
 }
 
+loongarch64_sources()
+{
+	find_sources "lib/eal/loongarch" '*.[chS]'
+	find_sources "$source_dirs" '*_lsx*.[chS]'
+	find_sources "$source_dirs" '*_lasx*.[chS]'
+	find_sources "$source_dirs" '*loongarch64*.[chS]'
+}
+
 if [ -n "$2" ]; then
 	echo $2 | grep -q "linux" || linux=false
 	echo $2 | grep -q "bsd" || bsd=false
@@ -130,6 +143,7 @@ if [ -n "$2" ]; then
 	echo $2 | grep -q "arm-" || arm_32=false
 	echo $2 | grep -q "arm64-" || arm_64=false
 	echo $2 | grep -q "ppc_64-" || ppc_64=false
+	echo $2 | grep -q "loongarch64-" || loongarch64=false
 	echo $2 | grep -q -e "i686-" -e "x32-" || x86_32=false
 fi
 
@@ -143,20 +157,22 @@ all_sources()
 	if $ppc_64 ; then ppc_64_sources ; fi
 	if $arm_32 ; then arm_32_sources ; fi
 	if $arm_64 ; then arm_64_sources ; fi
+	if $loongarch64 ; then loongarch64_sources ; fi
 }
 
 show_flags()
 {
 	if $verbose ; then
-		echo "mode:     $1"
-		echo "config:   $2"
-		echo "linux:    $linux"
-		echo "bsd:      $bsd"
-		echo "x86_32:   $x86_32"
-		echo "x86_64:   $x86_64"
-		echo "ppc_64:   $ppc_64"
-		echo "arm_32:   $arm_32"
-		echo "arm_64:   $arm_64"
+		echo "mode:        $1"
+		echo "config:      $2"
+		echo "linux:       $linux"
+		echo "bsd:         $bsd"
+		echo "x86_32:      $x86_32"
+		echo "x86_64:      $x86_64"
+		echo "ppc_64:      $ppc_64"
+		echo "arm_32:      $arm_32"
+		echo "arm_64:      $arm_64"
+		echo "loongarch64: $loongarch64"
 	fi
 }
 
