@@ -29,6 +29,8 @@
 #include "rte_efd_x86.h"
 #elif defined(RTE_ARCH_ARM64)
 #include "rte_efd_arm64.h"
+#elif defined(RTE_ARCH_LOONGARCH)
+#include "rte_efd_loongarch64.h"
 #endif
 
 RTE_LOG_REGISTER_DEFAULT(efd_logtype, INFO);
@@ -85,6 +87,7 @@ enum efd_lookup_internal_function {
 	EFD_LOOKUP_SCALAR = 0,
 	EFD_LOOKUP_AVX2,
 	EFD_LOOKUP_NEON,
+	EFD_LOOKUP_LASX,
 	EFD_LOOKUP_NUM
 };
 
@@ -674,6 +677,17 @@ rte_efd_create(const char *name, uint32_t max_num_rules, uint32_t key_len,
 	    rte_cpu_get_flag_enabled(RTE_CPUFLAG_NEON) &&
 			rte_vect_get_max_simd_bitwidth() >= RTE_VECT_SIMD_128)
 		table->lookup_fn = EFD_LOOKUP_NEON;
+	else
+#endif
+#if defined(RTE_ARCH_LOONGARCH)
+	/*
+	 * For less than 4 bits, scalar function performs better
+	 * than vectorised version
+	 */
+	if (RTE_EFD_VALUE_NUM_BITS > 3
+			&& rte_cpu_get_flag_enabled(RTE_CPUFLAG_LASX)
+			&& rte_vect_get_max_simd_bitwidth() >= RTE_VECT_SIMD_256)
+		table->lookup_fn = EFD_LOOKUP_LASX;
 	else
 #endif
 		table->lookup_fn = EFD_LOOKUP_SCALAR;
@@ -1301,6 +1315,14 @@ efd_lookup_internal(const struct efd_online_group_entry * const group,
 #if defined(RTE_ARCH_ARM64)
 	case EFD_LOOKUP_NEON:
 		return efd_lookup_internal_neon(group->hash_idx,
+					group->lookup_table,
+					hash_val_a,
+					hash_val_b);
+		break;
+#endif
+#if defined(RTE_ARCH_LOONGARCH)
+	case EFD_LOOKUP_LASX:
+		return efd_lookup_internal_lasx(group->hash_idx,
 					group->lookup_table,
 					hash_val_a,
 					hash_val_b);
