@@ -1516,6 +1516,9 @@ display_crypto_feature_info(uint64_t x)
 	printf("\t\t  + ARM: NEON (%c), CE (%c)\n",
 		(x & RTE_CRYPTODEV_FF_CPU_NEON) ? 'y' : 'n',
 		(x & RTE_CRYPTODEV_FF_CPU_ARM_CE) ? 'y' : 'n');
+	printf("\t\t  + LoongArch64: LSX (%c), LASX (%c)\n",
+		(x & RTE_CRYPTODEV_FF_CPU_LSX) ? 'y' : 'n',
+		(x & RTE_CRYPTODEV_FF_CPU_LASX) ? 'y' : 'n');
 	printf("\t  -- buffer offload\n");
 	printf("\t\t  + IN_PLACE_SGL (%c)\n",
 		(x & RTE_CRYPTODEV_FF_IN_PLACE_SGL) ? 'y' : 'n');
