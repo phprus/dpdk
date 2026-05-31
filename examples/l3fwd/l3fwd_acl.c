@@ -68,6 +68,14 @@ struct acl_algorithms acl_alg[] = {
 		.name = "rvv",
 		.alg = RTE_ACL_CLASSIFY_RVV,
 	},
+	{
+		.name = "lsx",
+		.alg = RTE_ACL_CLASSIFY_LSX,
+	},
+	{
+		.name = "lasx",
+		.alg = RTE_ACL_CLASSIFY_LASX,
+	},
 };
 
 struct rte_acl_field_def ipv4_defs[NUM_FIELDS_IPV4] = {
