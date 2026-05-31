@@ -304,6 +304,8 @@ enum rte_acl_classify_alg {
 	RTE_ACL_CLASSIFY_AVX512X16 = 6,  /**< requires AVX512 support. */
 	RTE_ACL_CLASSIFY_AVX512X32 = 7,  /**< requires AVX512 support. */
 	RTE_ACL_CLASSIFY_RVV = 8,     /**< requires RVV support. */
+	RTE_ACL_CLASSIFY_LSX = 9,     /**< requires LSX support. */
+	RTE_ACL_CLASSIFY_LASX = 10,    /**< requires LASX support. */
 };
 
 /**
