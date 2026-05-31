@@ -27,4 +27,7 @@ elif dpdk_conf.has('RTE_ARCH_PPC_64')
     sources += files('acl_run_altivec.c')
 elif dpdk_conf.has('RTE_ARCH_RISCV') and dpdk_conf.has('RTE_RISCV_FEATURE_V')
     sources += files('acl_run_rvv.c')
+elif dpdk_conf.has('RTE_ARCH_LOONGARCH')
+    sources += files('acl_run_lsx.c')
+    sources_lasx += files('acl_run_lasx.c')
 endif
