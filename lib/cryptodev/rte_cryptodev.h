@@ -588,6 +588,10 @@ rte_cryptodev_asym_get_xform_string(enum rte_crypto_asym_xform_type xform_enum);
 /**< Support Rx injection after security processing */
 #define RTE_CRYPTODEV_FF_MLDSA_SIGN_PREHASH		(1ULL << 29)
 /**< Support Pre Hash ML-DSA Signature Generation */
+#define	RTE_CRYPTODEV_FF_CPU_LSX			(1ULL << 30)
+/**< Utilises CPU SIMD LSX instructions */
+#define	RTE_CRYPTODEV_FF_CPU_LASX			(1ULL << 31)
+/**< Utilises CPU SIMD LASX instructions */
 
 /**
  * Get the name of a crypto device feature flag
