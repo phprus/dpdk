@@ -919,6 +919,10 @@ rte_cryptodev_get_feature_name(uint64_t flag)
 		return "CIPHER_MULTIPLE_DATA_UNITS";
 	case RTE_CRYPTODEV_FF_CIPHER_WRAPPED_KEY:
 		return "CIPHER_WRAPPED_KEY";
+	case RTE_CRYPTODEV_FF_CPU_LSX:
+		return "CPU_LSX";
+	case RTE_CRYPTODEV_FF_CPU_LASX:
+		return "CPU_LASX";
 	default:
 		return NULL;
 	}
