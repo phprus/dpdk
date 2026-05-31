@@ -106,6 +106,30 @@ rte_acl_classify_rvv(__rte_unused const struct rte_acl_ctx *ctx,
 }
 #endif
 
+#ifndef RTE_ARCH_LOONGARCH
+/*
+ * If ISA doesn't have LASX or LSX, provide dummy fallbacks
+ */
+int
+rte_acl_classify_lasx(__rte_unused const struct rte_acl_ctx *ctx,
+	__rte_unused const uint8_t **data,
+	__rte_unused uint32_t *results,
+	__rte_unused uint32_t num,
+	__rte_unused uint32_t categories)
+{
+	return -ENOTSUP;
+}
+int
+rte_acl_classify_lsx(__rte_unused const struct rte_acl_ctx *ctx,
+	__rte_unused const uint8_t **data,
+	__rte_unused uint32_t *results,
+	__rte_unused uint32_t num,
+	__rte_unused uint32_t categories)
+{
+	return -ENOTSUP;
+}
+#endif
+
 static const rte_acl_classify_t classify_fns[] = {
 	[RTE_ACL_CLASSIFY_DEFAULT] = rte_acl_classify_scalar,
 	[RTE_ACL_CLASSIFY_SCALAR] = rte_acl_classify_scalar,
@@ -116,6 +140,8 @@ static const rte_acl_classify_t classify_fns[] = {
 	[RTE_ACL_CLASSIFY_AVX512X16] = rte_acl_classify_avx512x16,
 	[RTE_ACL_CLASSIFY_AVX512X32] = rte_acl_classify_avx512x32,
 	[RTE_ACL_CLASSIFY_RVV] = rte_acl_classify_rvv,
+	[RTE_ACL_CLASSIFY_LSX] = rte_acl_classify_lsx,
+	[RTE_ACL_CLASSIFY_LASX] = rte_acl_classify_lasx,
 };
 
 /*
@@ -233,6 +259,34 @@ acl_check_alg_rvv(enum rte_acl_classify_alg alg)
 }
 
 /*
+ * Helper function for acl_check_alg.
+ * Check support for LoongArch64 specific classify methods.
+ */
+static int
+acl_check_alg_loongarch64(enum rte_acl_classify_alg alg)
+{
+	if (alg == RTE_ACL_CLASSIFY_LASX) {
+#ifdef RTE_ARCH_LOONGARCH
+		if (rte_cpu_get_flag_enabled(RTE_CPUFLAG_LASX) &&
+				rte_vect_get_max_simd_bitwidth() >= RTE_VECT_SIMD_256)
+			return 0;
+#endif
+		return -ENOTSUP;
+	}
+
+	if (alg == RTE_ACL_CLASSIFY_LSX) {
+#ifdef RTE_ARCH_LOONGARCH
+		if (rte_cpu_get_flag_enabled(RTE_CPUFLAG_LSX) &&
+				rte_vect_get_max_simd_bitwidth() >= RTE_VECT_SIMD_128)
+			return 0;
+#endif
+		return -ENOTSUP;
+	}
+
+	return -EINVAL;
+}
+
+/*
  * Check if input alg is supported by given platform/binary.
  * Note that both conditions should be met:
  * - at build time compiler supports ISA used by given methods
@@ -242,6 +296,9 @@ static int
 acl_check_alg(enum rte_acl_classify_alg alg)
 {
 	switch (alg) {
+	case RTE_ACL_CLASSIFY_LASX:
+	case RTE_ACL_CLASSIFY_LSX:
+		return acl_check_alg_loongarch64(alg);
 	case RTE_ACL_CLASSIFY_NEON:
 		return acl_check_alg_arm(alg);
 	case RTE_ACL_CLASSIFY_ALTIVEC:
@@ -283,6 +340,9 @@ acl_get_best_alg(void)
 		RTE_ACL_CLASSIFY_SSE,
 #elif defined(RTE_RISCV_FEATURE_V)
 		RTE_ACL_CLASSIFY_RVV,
+#elif defined(RTE_ARCH_LOONGARCH)
+		RTE_ACL_CLASSIFY_LASX,
+		RTE_ACL_CLASSIFY_LSX,
 #endif
 		RTE_ACL_CLASSIFY_SCALAR,
 	};
