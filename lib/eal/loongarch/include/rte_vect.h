@@ -62,6 +62,47 @@ typedef union rte_ymm {
 	double   pd[YMM_SIZE / sizeof(double)];
 } rte_ymm_t;
 
+
+#ifndef __loongarch_asx_sx_conv
+
+static __rte_always_inline __m256i
+__lasx_cast_128(__m128i src)
+{
+	__m256i dest;
+	asm ("" : "=f"(dest) : "0"(src));
+	return dest;
+}
+
+
+static __rte_always_inline __m256i
+__lasx_concat_128(__m128i lo, __m128i hi)
+{
+	__m256i dest;
+	asm ("xvpermi.q %u0,%u2,0x02\n" : "=f"(dest) : "0"(lo), "f"(hi));
+	return dest;
+}
+
+
+static __rte_always_inline __m128i
+__lasx_extract_128_lo(__m256i src)
+{
+	__m128i dest;
+	asm ("" : "=f"(dest) : "0"(src));
+	return dest;
+}
+
+
+static __rte_always_inline __m128i
+__lasx_extract_128_hi(__m256i src)
+{
+	__m128i dest;
+	asm ("xvpermi.d %u0,%u1,0xe\n" : "=f"(dest) : "f"(src));
+	return dest;
+}
+
+
+#endif /* __loongarch_asx_sx_conv */
+
 #endif /* __loongarch_asx */
 
 #ifdef __cplusplus
