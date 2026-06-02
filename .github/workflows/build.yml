@@ -52,6 +52,7 @@ jobs:
       MINI: ${{ matrix.config.mini != '' }}
       PPC64LE: ${{ matrix.config.cross == 'ppc64le' }}
       RISCV64: ${{ matrix.config.cross == 'riscv64' }}
+      LOONGARCH64: ${{ matrix.config.cross == 'loongarch64' }}
       RUN_TESTS: ${{ contains(matrix.config.checks, 'tests') }}
       STDATOMIC: ${{ contains(matrix.config.checks, 'stdatomic') }}
       UBSAN: ${{ contains(matrix.config.checks, 'ubsan') }}
@@ -118,6 +119,9 @@ jobs:
           - os: ubuntu-22.04
             compiler: gcc
             cross: riscv64
+          - os: ubuntu-24.04
+            compiler: gcc
+            cross: loongarch64
 
     steps:
     - name: Checkout sources
@@ -173,8 +177,11 @@ jobs:
     - name: Install riscv64 cross compiling packages
       if: env.RISCV64 == 'true'
       run: sudo apt install -y crossbuild-essential-riscv64
+    - name: Install loongarch64 cross compiling packages
+      if: env.LOONGARCH64 == 'true'
+      run: sudo apt install -y gcc-14-loongarch64-linux-gnu g++-14-loongarch64-linux-gnu libc-dev-loong64-cross
     - name: Install test tools packages
-      if: env.AARCH64 != 'true' || env.PPC64LE != 'true' || env.RISCV64 != 'true' || env.RUN_TESTS == 'true'
+      if: env.AARCH64 != 'true' || env.PPC64LE != 'true' || env.RISCV64 != 'true' || env.LOONGARCH64 != 'true' || env.RUN_TESTS == 'true'
       run: sudo apt install -y babeltrace gdb jq
     - name: Install doc generation packages
       if: env.BUILD_DOCS == 'true'

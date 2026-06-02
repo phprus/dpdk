@@ -1,0 +1,12 @@
+[binaries]
+c = ['ccache', 'loongarch64-linux-gnu-gcc-14']
+cpp = ['ccache', 'loongarch64-linux-gnu-g++-14']
+ar = 'loongarch64-linux-gnu-gcc-ar-14'
+strip = 'loongarch64-linux-gnu-strip'
+pcap-config = ''
+
+[host_machine]
+system = 'linux'
+cpu_family = 'loongarch64'
+cpu = 'loongarch64'
+endian = 'little'
