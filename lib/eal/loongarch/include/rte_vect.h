@@ -45,6 +45,42 @@ typedef union rte_xmm {
 	double   pd[XMM_SIZE / sizeof(double)];
 } rte_xmm_t;
 
+
+static __rte_always_inline __m128i
+lsx_set_b(int8_t e15, int8_t e14, int8_t e13, int8_t e12,
+	  int8_t e11, int8_t e10, int8_t  e9, int8_t  e8,
+	  int8_t  e7, int8_t  e6, int8_t  e5, int8_t  e4,
+	  int8_t  e3, int8_t  e2, int8_t  e1, int8_t  e0)
+{
+	return (__m128i)((v16i8){ e0,  e1,  e2,  e3,
+				  e4,  e5,  e6,  e7,
+				  e8,  e9,  e10, e11,
+				  e12, e13, e14, e15 });
+}
+
+
+static __rte_always_inline __m128i
+lsx_set_h(int16_t  e7, int16_t  e6, int16_t  e5, int16_t  e4,
+	  int16_t  e3, int16_t  e2, int16_t  e1, int16_t  e0)
+{
+	return (__m128i)((v8i16){ e0, e1, e2,  e3,  e4,  e5,  e6,  e7 });
+}
+
+
+static __rte_always_inline __m128i
+lsx_set_w(int32_t e3, int32_t e2, int32_t e1, int32_t e0)
+{
+	return (__m128i)((v4i32){ e0, e1, e2, e3 });
+}
+
+
+static __rte_always_inline __m128i
+lsx_set_d(int64_t e1, int64_t e0)
+{
+	return (__m128i)((v2i64){ e0, e1 });
+}
+
+
 #ifdef __loongarch_asx
 
 typedef __m256i ymm_t;
@@ -102,6 +138,49 @@ __lasx_extract_128_hi(__m256i src)
 
 
 #endif /* __loongarch_asx_sx_conv */
+
+
+static __rte_always_inline __m256i
+lasx_set_b(int8_t e31, int8_t e30, int8_t e29, int8_t e28,
+	  int8_t e27, int8_t e26, int8_t e25, int8_t e24,
+	  int8_t e23, int8_t e22, int8_t e21, int8_t e20,
+	  int8_t e19, int8_t e18, int8_t e17, int8_t e16,
+	  int8_t e15, int8_t e14, int8_t e13, int8_t e12,
+	  int8_t e11, int8_t e10, int8_t  e9, int8_t  e8,
+	  int8_t  e7, int8_t  e6, int8_t  e5, int8_t  e4,
+	  int8_t  e3, int8_t  e2, int8_t  e1, int8_t  e0)
+{
+	return (__m256i)((v32i8){ e0,  e1,  e2,  e3,  e4,  e5,  e6,  e7,
+				  e8,  e9,  e10, e11, e12, e13, e14, e15,
+				  e16, e17, e18, e19, e20, e21, e22, e23,
+				  e24, e25, e26, e27, e28, e29, e30, e31 });
+}
+
+
+static __rte_always_inline __m256i
+lasx_set_h(int16_t e15, int16_t e14, int16_t e13, int16_t e12,
+	   int16_t e11, int16_t e10, int16_t  e9, int16_t  e8,
+	   int16_t  e7, int16_t  e6, int16_t  e5, int16_t  e4,
+	   int16_t  e3, int16_t  e2, int16_t  e1, int16_t  e0)
+{
+	return (__m256i)((v16i16){ e0, e1, e2,  e3,  e4,  e5,  e6,  e7,
+				   e8, e9, e10, e11, e12, e13, e14, e15 });
+}
+
+
+static __rte_always_inline __m256i
+lasx_set_w(int32_t e7, int32_t e6, int32_t e5, int32_t e4,
+	   int32_t e3, int32_t e2, int32_t e1, int32_t e0)
+{
+	return (__m256i)((v8i32){ e0, e1, e2,  e3,  e4,  e5,  e6,  e7 });
+}
+
+
+static __rte_always_inline __m256i
+lasx_set_d(int64_t  e3, int64_t  e2, int64_t  e1, int64_t  e0)
+{
+	return (__m256i)((v4i64){ e0, e1, e2,  e3 });
+}
 
 #endif /* __loongarch_asx */
 
