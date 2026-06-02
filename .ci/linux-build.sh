@@ -81,6 +81,10 @@ if [ "$RISCV64" = "true" ]; then
     cross_file=config/riscv/riscv64_linux_gcc
 fi
 
+if [ "$LOONGARCH64" = "true" ]; then
+    cross_file=config/loongarch/loongarch64_linux_gcc_ubuntu2404
+fi
+
 buildtype=debugoptimized
 
 if [ "$BUILD_DEBUG" = "true" ]; then
