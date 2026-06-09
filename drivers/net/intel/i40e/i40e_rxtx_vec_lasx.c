@@ -257,6 +257,11 @@ _recv_raw_pkts_vec_lasx(struct ci_rx_queue *rxq, struct rte_mbuf **rx_pkts,
 			RTE_MBUF_F_RX_L4_CKSUM_GOOD | RTE_MBUF_F_RX_L4_CKSUM_BAD |
 			RTE_MBUF_F_RX_OUTER_IP_CKSUM_BAD);
 
+	const __m256i desc_mask = lasx_xvbitselmaski_h(0x80);
+
+	const __m256i rearm_mask_04 = lasx_xvbitselmaski_w(0x04);
+	const __m256i rearm_mask_F0 = lasx_xvbitselmaski_w(0xF0);
+
 	RTE_SET_USED(lasx_aligned); /* for 32B descriptors we don't use this */
 
 	uint16_t i, received;
@@ -300,8 +305,8 @@ _recv_raw_pkts_vec_lasx(struct ci_rx_queue *rxq, struct rte_mbuf **rx_pkts,
 		 */
 		const __m256i len6_7 = __lasx_xvslli_w(raw_desc6_7, PKTLEN_SHIFT);
 		const __m256i len4_5 = __lasx_xvslli_w(raw_desc4_5, PKTLEN_SHIFT);
-		const __m256i desc6_7 = lasx_xvbitseli_h(raw_desc6_7, len6_7, 0x80);
-		const __m256i desc4_5 = lasx_xvbitseli_h(raw_desc4_5, len4_5, 0x80);
+		const __m256i desc6_7 = __lasx_xvbitsel_v(raw_desc6_7, len6_7, desc_mask);
+		const __m256i desc4_5 = __lasx_xvbitsel_v(raw_desc4_5, len4_5, desc_mask);
 		__m256i mb6_7 = lasx_xvshuffle_b(desc6_7, shuf_msk);
 		__m256i mb4_5 = lasx_xvshuffle_b(desc4_5, shuf_msk);
 		mb6_7 = __lasx_xvadd_h(mb6_7, crc_adjust);
@@ -330,8 +335,8 @@ _recv_raw_pkts_vec_lasx(struct ci_rx_queue *rxq, struct rte_mbuf **rx_pkts,
 		 */
 		const __m256i len2_3 = __lasx_xvslli_w(raw_desc2_3, PKTLEN_SHIFT);
 		const __m256i len0_1 = __lasx_xvslli_w(raw_desc0_1, PKTLEN_SHIFT);
-		const __m256i desc2_3 = lasx_xvbitseli_h(raw_desc2_3, len2_3, 0x80);
-		const __m256i desc0_1 = lasx_xvbitseli_h(raw_desc0_1, len0_1, 0x80);
+		const __m256i desc2_3 = __lasx_xvbitsel_v(raw_desc2_3, len2_3, desc_mask);
+		const __m256i desc0_1 = __lasx_xvbitsel_v(raw_desc0_1, len0_1, desc_mask);
 		__m256i mb2_3 = lasx_xvshuffle_b(desc2_3, shuf_msk);
 		__m256i mb0_1 = lasx_xvshuffle_b(desc0_1, shuf_msk);
 		mb2_3 = __lasx_xvadd_h(mb2_3, crc_adjust);
@@ -396,7 +401,7 @@ _recv_raw_pkts_vec_lasx(struct ci_rx_queue *rxq, struct rte_mbuf **rx_pkts,
 			 * identifies an FDIR ID match, and zeros the RSS value
 			 * in the mbuf on FDIR match to keep mbuf data clean.
 			 */
-#define FDIR_BLEND_MASK ((1 << 3) | (1 << 7))
+			const __m256i fdir_blend_mask = lasx_xvbitselmaski_w((1 << 3) | (1 << 7));
 
 			/* Flags:
 			 * - Take flags, shift bits to null out
@@ -425,8 +430,8 @@ _recv_raw_pkts_vec_lasx(struct ci_rx_queue *rxq, struct rte_mbuf **rx_pkts,
 			 * otherwise the mb0_1 register RSS field is zeroed.
 			 */
 			const __m256i fdir_zero_mask = __lasx_xvrepli_w(0);
-			__m256i tmp0_1 = lasx_xvbitseli_w(fdir_zero_mask,
-						fdir_mask, FDIR_BLEND_MASK);
+			__m256i tmp0_1 = __lasx_xvbitsel_v(fdir_zero_mask,
+						fdir_mask, fdir_blend_mask);
 			__m256i fdir_mb0_1 = __lasx_xvand_v(mb0_1, fdir_mask);
 			mb0_1 = __lasx_xvandn_v(tmp0_1, mb0_1);
 
@@ -441,24 +446,24 @@ _recv_raw_pkts_vec_lasx(struct ci_rx_queue *rxq, struct rte_mbuf **rx_pkts,
 			 */
 			__m256i tmp2_3 = lasx_xvalignr_b(fdir_mask, fdir_mask, 12);
 			__m256i fdir_mb2_3 = __lasx_xvand_v(mb2_3, tmp2_3);
-			tmp2_3 = lasx_xvbitseli_w(fdir_zero_mask, tmp2_3,
-						    FDIR_BLEND_MASK);
+			tmp2_3 = __lasx_xvbitsel_v(fdir_zero_mask, tmp2_3,
+						    fdir_blend_mask);
 			mb2_3 = __lasx_xvandn_v(tmp2_3, mb2_3);
 			rx_pkts[i + 2]->hash.fdir.hi = __lasx_xvpickve2gr_w(fdir_mb2_3, 3);
 			rx_pkts[i + 3]->hash.fdir.hi = __lasx_xvpickve2gr_w(fdir_mb2_3, 7);
 
 			__m256i tmp4_5 = lasx_xvalignr_b(fdir_mask, fdir_mask, 8);
 			__m256i fdir_mb4_5 = __lasx_xvand_v(mb4_5, tmp4_5);
-			tmp4_5 = lasx_xvbitseli_w(fdir_zero_mask, tmp4_5,
-						    FDIR_BLEND_MASK);
+			tmp4_5 = __lasx_xvbitsel_v(fdir_zero_mask, tmp4_5,
+						    fdir_blend_mask);
 			mb4_5 = __lasx_xvandn_v(tmp4_5, mb4_5);
 			rx_pkts[i + 4]->hash.fdir.hi = __lasx_xvpickve2gr_w(fdir_mb4_5, 3);
 			rx_pkts[i + 5]->hash.fdir.hi = __lasx_xvpickve2gr_w(fdir_mb4_5, 7);
 
 			__m256i tmp6_7 = lasx_xvalignr_b(fdir_mask, fdir_mask, 4);
 			__m256i fdir_mb6_7 = __lasx_xvand_v(mb6_7, tmp6_7);
-			tmp6_7 = lasx_xvbitseli_w(fdir_zero_mask, tmp6_7,
-						    FDIR_BLEND_MASK);
+			tmp6_7 = __lasx_xvbitsel_v(fdir_zero_mask, tmp6_7,
+						    fdir_blend_mask);
 			mb6_7 = __lasx_xvandn_v(tmp6_7, mb6_7);
 			rx_pkts[i + 6]->hash.fdir.hi = __lasx_xvpickve2gr_w(fdir_mb6_7, 3);
 			rx_pkts[i + 7]->hash.fdir.hi = __lasx_xvpickve2gr_w(fdir_mb6_7, 7);
@@ -504,15 +509,15 @@ _recv_raw_pkts_vec_lasx(struct ci_rx_queue *rxq, struct rte_mbuf **rx_pkts,
 		/* build up data and do writes */
 		__m256i rearm0, rearm1, rearm2, rearm3, rearm4, rearm5,
 				rearm6, rearm7;
-		rearm6 = lasx_xvbitseli_w(mbuf_init, __lasx_xvbsll_v(mbuf_flags, 8), 0x04);
-		rearm4 = lasx_xvbitseli_w(mbuf_init, __lasx_xvbsll_v(mbuf_flags, 4), 0x04);
-		rearm2 = lasx_xvbitseli_w(mbuf_init, mbuf_flags, 0x04);
-		rearm0 = lasx_xvbitseli_w(mbuf_init, __lasx_xvbsrl_v(mbuf_flags, 4), 0x04);
+		rearm6 = __lasx_xvbitsel_v(mbuf_init, __lasx_xvbsll_v(mbuf_flags, 8), rearm_mask_04);
+		rearm4 = __lasx_xvbitsel_v(mbuf_init, __lasx_xvbsll_v(mbuf_flags, 4), rearm_mask_04);
+		rearm2 = __lasx_xvbitsel_v(mbuf_init, mbuf_flags, rearm_mask_04);
+		rearm0 = __lasx_xvbitsel_v(mbuf_init, __lasx_xvbsrl_v(mbuf_flags, 4), rearm_mask_04);
 		/* permute to add in the rx_descriptor e.g. rss fields */
-		rearm6 = lasx_xvpermi_q(rearm6, mb6_7, 0x20);
-		rearm4 = lasx_xvpermi_q(rearm4, mb4_5, 0x20);
-		rearm2 = lasx_xvpermi_q(rearm2, mb2_3, 0x20);
-		rearm0 = lasx_xvpermi_q(rearm0, mb0_1, 0x20);
+		rearm6 = __lasx_xvpermi_q(mb6_7, rearm6, 0x20);
+		rearm4 = __lasx_xvpermi_q(mb4_5, rearm4, 0x20);
+		rearm2 = __lasx_xvpermi_q(mb2_3, rearm2, 0x20);
+		rearm0 = __lasx_xvpermi_q(mb0_1, rearm0, 0x20);
 		/* write to mbuf */
 		__lasx_xvst(rearm6, (__m256i *)&rx_pkts[i + 6]->rearm_data, 0);
 		__lasx_xvst(rearm4, (__m256i *)&rx_pkts[i + 4]->rearm_data, 0);
@@ -522,15 +527,15 @@ _recv_raw_pkts_vec_lasx(struct ci_rx_queue *rxq, struct rte_mbuf **rx_pkts,
 		/* repeat for the odd mbufs */
 		const __m256i odd_flags = __lasx_cast_128(
 				__lasx_extract_128_hi(mbuf_flags));
-		rearm7 = lasx_xvbitseli_w(mbuf_init, __lasx_xvbsll_v(odd_flags, 8), 0x04);
-		rearm5 = lasx_xvbitseli_w(mbuf_init, __lasx_xvbsll_v(odd_flags, 4), 0x04);
-		rearm3 = lasx_xvbitseli_w(mbuf_init, odd_flags, 0x04);
-		rearm1 = lasx_xvbitseli_w(mbuf_init, __lasx_xvbsrl_v(odd_flags, 4), 0x04);
+		rearm7 = __lasx_xvbitsel_v(mbuf_init, __lasx_xvbsll_v(odd_flags, 8), rearm_mask_04);
+		rearm5 = __lasx_xvbitsel_v(mbuf_init, __lasx_xvbsll_v(odd_flags, 4), rearm_mask_04);
+		rearm3 = __lasx_xvbitsel_v(mbuf_init, odd_flags, rearm_mask_04);
+		rearm1 = __lasx_xvbitsel_v(mbuf_init, __lasx_xvbsrl_v(odd_flags, 4), rearm_mask_04);
 		/* since odd mbufs are already in hi 128-bits use blend */
-		rearm7 = lasx_xvbitseli_w(rearm7, mb6_7, 0xF0);
-		rearm5 = lasx_xvbitseli_w(rearm5, mb4_5, 0xF0);
-		rearm3 = lasx_xvbitseli_w(rearm3, mb2_3, 0xF0);
-		rearm1 = lasx_xvbitseli_w(rearm1, mb0_1, 0xF0);
+		rearm7 = __lasx_xvbitsel_v(rearm7, mb6_7, rearm_mask_F0);
+		rearm5 = __lasx_xvbitsel_v(rearm5, mb4_5, rearm_mask_F0);
+		rearm3 = __lasx_xvbitsel_v(rearm3, mb2_3, rearm_mask_F0);
+		rearm1 = __lasx_xvbitsel_v(rearm1, mb0_1, rearm_mask_F0);
 		/* again write to mbufs */
 		__lasx_xvst(rearm7, (__m256i *)&rx_pkts[i + 7]->rearm_data, 0);
 		__lasx_xvst(rearm5, (__m256i *)&rx_pkts[i + 5]->rearm_data, 0);
