@@ -1241,6 +1241,8 @@ enum i40e_rx_func_type {
 	I40E_RX_NEON_SCATTERED,
 	I40E_RX_ALTIVEC,
 	I40E_RX_ALTIVEC_SCATTERED,
+	I40E_RX_LASX,
+	I40E_RX_LASX_SCATTERED,
 };
 
 enum i40e_tx_func_type {
@@ -1250,6 +1252,7 @@ enum i40e_tx_func_type {
 	I40E_TX_AVX512,
 	I40E_TX_NEON,
 	I40E_TX_ALTIVEC,
+	I40E_TX_LASX,
 };
 
 /*
