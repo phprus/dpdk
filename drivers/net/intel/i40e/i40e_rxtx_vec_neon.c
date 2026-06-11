@@ -681,29 +681,3 @@ i40e_xmit_fixed_burst_vec(void *__rte_restrict tx_queue,
 
 	return nb_pkts;
 }
-
-void __rte_cold
-i40e_rx_queue_release_mbufs_vec(struct ci_rx_queue *rxq)
-{
-	_i40e_rx_queue_release_mbufs_vec(rxq);
-}
-
-int __rte_cold
-i40e_rxq_vec_setup(struct ci_rx_queue *rxq)
-{
-	rxq->vector_rx = 1;
-	rxq->mbuf_initializer = ci_rxq_mbuf_initializer(rxq->port_id);
-	return 0;
-}
-
-int __rte_cold
-i40e_rx_vec_dev_conf_condition_check(struct rte_eth_dev *dev)
-{
-	return i40e_rx_vec_dev_conf_condition_check_default(dev);
-}
-
-enum rte_vect_max_simd
-i40e_get_max_simd_bitwidth(void)
-{
-	return rte_vect_get_max_simd_bitwidth();
-}
