@@ -31,6 +31,7 @@
 #include "base/i40e_type.h"
 #include "i40e_ethdev.h"
 #include "i40e_rxtx.h"
+#include "i40e_rxtx_vec_common.h"
 
 #ifdef RTE_ARCH_X86
 #include "../common/rx_vec_x86.h"
@@ -1019,7 +1020,7 @@ i40e_xmit_pkts_simple(void *tx_queue,
 	return ci_xmit_pkts_simple(tx_queue, tx_pkts, nb_pkts);
 }
 
-#ifndef RTE_ARCH_X86
+#if defined(RTE_ARCH_ARM) || defined(RTE_ARCH_PPC_64)
 static uint16_t
 i40e_xmit_pkts_vec(void *tx_queue, struct rte_mbuf **tx_pkts,
 		   uint16_t nb_pkts)
@@ -3110,11 +3111,7 @@ i40e_set_tx_function(struct rte_eth_dev *dev)
 		goto out;
 
 	if (ad->tx_vec_allowed) {
-#ifdef RTE_ARCH_X86
 		req_features.simd_width = i40e_get_max_simd_bitwidth();
-#else
-		req_features.simd_width = rte_vect_get_max_simd_bitwidth();
-#endif
 	}
 
 	ad->tx_func_type = ci_tx_path_select(&req_features, &i40e_tx_path_infos[0],
@@ -3231,14 +3228,37 @@ i40e_set_default_pctype_table(struct rte_eth_dev *dev)
 	}
 }
 
-#ifdef RTE_ARCH_X86
 enum rte_vect_max_simd
 i40e_get_max_simd_bitwidth(void)
 {
+#ifdef RTE_ARCH_X86
 	return ci_get_x86_max_simd_bitwidth();
+#else
+	return rte_vect_get_max_simd_bitwidth();
+#endif
 }
 
-#else
+void __rte_cold
+i40e_rx_queue_release_mbufs_vec(struct ci_rx_queue *rxq)
+{
+	_i40e_rx_queue_release_mbufs_vec(rxq);
+}
+
+int __rte_cold
+i40e_rxq_vec_setup(struct ci_rx_queue *rxq)
+{
+	rxq->vector_rx = 1;
+	rxq->mbuf_initializer = ci_rxq_mbuf_initializer(rxq->port_id);
+	return 0;
+}
+
+int __rte_cold
+i40e_rx_vec_dev_conf_condition_check(struct rte_eth_dev *dev)
+{
+	return i40e_rx_vec_dev_conf_condition_check_default(dev);
+}
+
+#ifndef RTE_ARCH_X86
 uint16_t
 i40e_recv_pkts_vec_avx2(void __rte_unused *rx_queue,
 			struct rte_mbuf __rte_unused **rx_pkts,
