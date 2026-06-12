@@ -138,6 +138,12 @@ typedef union rte_ymm {
 
 #ifndef __loongarch_asx_sx_conv
 
+#ifdef __clang__
+
+#include "rte_vect_cast_asm_impl.h"
+
+#else
+
 static __rte_always_inline __m256i
 __lasx_cast_128(__m128i src)
 {
@@ -173,6 +179,7 @@ __lasx_extract_128_hi(__m256i src)
 	return dest;
 }
 
+#endif /* !__clang__ */
 
 #endif /* __loongarch_asx_sx_conv */
 
