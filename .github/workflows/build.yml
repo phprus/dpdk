@@ -122,6 +122,9 @@ jobs:
           - os: ubuntu-24.04
             compiler: gcc
             cross: loongarch64
+          - os: ubuntu-24.04
+            compiler: clang
+            cross: loongarch64
 
     steps:
     - name: Checkout sources
@@ -180,6 +183,11 @@ jobs:
     - name: Install loongarch64 cross compiling packages
       if: env.LOONGARCH64 == 'true'
       run: sudo apt install -y gcc-14-loongarch64-linux-gnu g++-14-loongarch64-linux-gnu libc-dev-loong64-cross
+    - name: Install loongarch64 clang cross compiling packages
+      if: env.LOONGARCH64 == 'true' && matrix.config.compiler == 'clang'
+      run: |
+        sudo apt install -y clang-20 lld-20
+        sudo sed -i -e 's|/usr/loongarch64-linux-gnu||g' /usr/loongarch64-linux-gnu/lib/libc.so
     - name: Install test tools packages
       if: env.AARCH64 != 'true' || env.PPC64LE != 'true' || env.RISCV64 != 'true' || env.LOONGARCH64 != 'true' || env.RUN_TESTS == 'true'
       run: sudo apt install -y babeltrace gdb jq

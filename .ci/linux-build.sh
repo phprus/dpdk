@@ -82,7 +82,11 @@ if [ "$RISCV64" = "true" ]; then
 fi
 
 if [ "$LOONGARCH64" = "true" ]; then
-    cross_file=config/loongarch/loongarch64_linux_gcc_ubuntu2404
+    if [ "${CC%%clang*}" != "$CC" ]; then
+        cross_file=config/loongarch/loongarch64_linux_clang_ubuntu2404
+    else
+        cross_file=config/loongarch/loongarch64_linux_gcc_ubuntu2404
+    fi
 fi
 
 buildtype=debugoptimized
