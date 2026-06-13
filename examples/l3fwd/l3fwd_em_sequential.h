@@ -20,6 +20,8 @@
 #include "l3fwd_sse.h"
 #elif defined __ARM_NEON
 #include "l3fwd_neon.h"
+#elif defined RTE_ARCH_LOONGARCH
+#include "l3fwd_lsx.h"
 #endif
 
 static __rte_always_inline uint16_t
