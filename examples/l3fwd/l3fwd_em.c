@@ -321,7 +321,7 @@ em_get_ipv6_dst_port(void *ipv6_hdr, uint16_t portid, void *lookup_struct)
 	return (ret < 0) ? portid : ipv6_l3fwd_out_if[ret];
 }
 
-#if defined RTE_ARCH_X86 || defined __ARM_NEON
+#if defined RTE_ARCH_X86 || defined __ARM_NEON || defined RTE_ARCH_LOONGARCH
 #if defined(NO_HASH_MULTI_LOOKUP)
 #include "l3fwd_em_sequential.h"
 #else
@@ -648,7 +648,7 @@ em_main_loop(__rte_unused void *dummy)
 			if (nb_rx == 0)
 				continue;
 
-#if defined RTE_ARCH_X86 || defined __ARM_NEON
+#if defined RTE_ARCH_X86 || defined __ARM_NEON || defined RTE_ARCH_LOONGARCH
 			l3fwd_em_send_packets(nb_rx, pkts_burst,
 							portid, qconf);
 #else
@@ -692,7 +692,7 @@ em_event_loop_single(struct l3fwd_event_resources *evt_rsrc,
 
 		struct rte_mbuf *mbuf = ev.mbuf;
 
-#if defined RTE_ARCH_X86 || defined __ARM_NEON
+#if defined RTE_ARCH_X86 || defined __ARM_NEON || defined RTE_ARCH_LOONGARCH
 		mbuf->port = em_get_dst_port(lconf, mbuf, mbuf->port);
 		process_packet(mbuf, &mbuf->port);
 #else
@@ -756,7 +756,7 @@ em_event_loop_burst(struct l3fwd_event_resources *evt_rsrc,
 			continue;
 		}
 
-#if defined RTE_ARCH_X86 || defined __ARM_NEON
+#if defined RTE_ARCH_X86 || defined __ARM_NEON || defined RTE_ARCH_LOONGARCH
 		l3fwd_em_process_events(nb_deq, (struct rte_event **)&events,
 					lconf);
 #else
@@ -892,7 +892,7 @@ em_event_loop_vector(struct l3fwd_event_resources *evt_rsrc,
 				events[i].op = RTE_EVENT_OP_FORWARD;
 			}
 
-#if defined RTE_ARCH_X86 || defined __ARM_NEON
+#if defined RTE_ARCH_X86 || defined __ARM_NEON || defined RTE_ARCH_LOONGARCH
 			l3fwd_em_process_event_vector(events[i].vec, lconf,
 						      dst_ports);
 #else
