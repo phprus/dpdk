@@ -12,6 +12,8 @@
 #include "l3fwd_neon.h"
 #elif defined RTE_ARCH_PPC_64
 #include "l3fwd_altivec.h"
+#elif defined RTE_ARCH_LOONGARCH
+#include "l3fwd_lsx.h"
 #else
 #include "l3fwd_common.h"
 #endif
@@ -19,7 +21,7 @@
  * If the machine has SSE, NEON or PPC 64 then multiple packets
  * can be sent at once if not only single packets will be sent.
  */
-#if defined RTE_ARCH_X86 || defined __ARM_NEON || defined RTE_ARCH_PPC_64
+#if defined RTE_ARCH_X86 || defined __ARM_NEON || defined RTE_ARCH_PPC_64 || defined RTE_ARCH_LOONGARCH
 #define ACL_SEND_MULTI
 #endif
 
