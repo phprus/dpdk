@@ -136,6 +136,8 @@ lpm_get_dst_port_with_ipv4(const struct lcore_conf *qconf, struct rte_mbuf *pkt,
 #include "l3fwd_lpm_neon.h"
 #elif defined(RTE_ARCH_PPC_64)
 #include "l3fwd_lpm_altivec.h"
+#elif defined(RTE_ARCH_LOONGARCH)
+#include "l3fwd_lpm_lsx.h"
 #else
 #include "l3fwd_lpm.h"
 #endif
@@ -210,7 +212,8 @@ lpm_main_loop(__rte_unused void *dummy)
 				continue;
 
 #if defined RTE_ARCH_X86 || defined __ARM_NEON \
-			 || defined RTE_ARCH_PPC_64
+			 || defined RTE_ARCH_PPC_64 \
+			 || defined RTE_ARCH_LOONGARCH
 			l3fwd_lpm_send_packets(nb_rx, pkts_burst,
 						portid, qconf);
 #else
@@ -232,7 +235,7 @@ lpm_process_event_pkt(const struct lcore_conf *lconf, struct rte_mbuf *mbuf)
 	mbuf->port = lpm_get_dst_port(lconf, mbuf, mbuf->port);
 
 #if defined RTE_ARCH_X86 || defined __ARM_NEON \
-	|| defined RTE_ARCH_PPC_64
+	|| defined RTE_ARCH_PPC_64 || defined RTE_ARCH_LOONGARCH
 	process_packet(mbuf, &mbuf->port);
 #else
 
@@ -431,7 +434,8 @@ lpm_process_event_vector(struct rte_event_vector *vec, struct lcore_conf *lconf,
 	struct rte_mbuf **mbufs = vec->mbufs;
 	int i;
 
-#if defined RTE_ARCH_X86 || defined __ARM_NEON || defined RTE_ARCH_PPC_64
+#if defined RTE_ARCH_X86 || defined __ARM_NEON || defined RTE_ARCH_PPC_64 \
+			 || defined RTE_ARCH_LOONGARCH
 	if (vec->attr_valid) {
 		l3fwd_lpm_process_packets(vec->nb_elem, mbufs, vec->port,
 					  dst_port, lconf, 1);

@@ -90,6 +90,8 @@ struct l3fwd_event_resources {
 #include "l3fwd_neon.h"
 #elif defined(RTE_ARCH_PPC_64)
 #include "l3fwd_altivec.h"
+#elif defined (RTE_ARCH_LOONGARCH)
+#include "l3fwd_lsx.h"
 #else
 static inline uint16_t
 process_dst_port(uint16_t *dst_ports, uint16_t nb_elem)
