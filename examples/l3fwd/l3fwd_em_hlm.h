@@ -12,6 +12,9 @@
 #elif defined __ARM_NEON
 #include "l3fwd_neon.h"
 #include "l3fwd_em_hlm_neon.h"
+#elif defined RTE_ARCH_LOONGARCH
+#include "l3fwd_lsx.h"
+#include "l3fwd_em_hlm_lsx.h"
 #endif
 
 #ifdef RTE_ARCH_ARM64
