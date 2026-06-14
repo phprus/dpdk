@@ -76,8 +76,11 @@ lsx_set_d(int64_t e1, int64_t e0)
 static __rte_always_inline __m128i
 lsx_vshuffle_b(__m128i a, __m128i b)
 {
+	__m128i dest = __lsx_vslti_b(b, 0);
+	dest = __lsx_vnor_v(dest, dest);
 	a = __lsx_vshuf_b(a, a, __lsx_vandi_b(b, 15));
-	return __lsx_vandn_v(__lsx_vslti_b(b, 0), a);
+	dest = __lsx_vand_v(dest, a);
+	return dest;
 }
 
 
@@ -90,8 +93,6 @@ __extension__ ({								\
 		dest = __lsx_vbsrl_v((a), ((count)&15));			\
 	else if ((count) == 0)							\
 		dest = (b);							\
-	else if ((count) == 8)							\
-		dest = __lsx_vpermi_w((a), (b), 0x4E);				\
 	else									\
 		dest = __lsx_vor_v(__lsx_vbsll_v((a), (16-((count)&15))),	\
 				__lsx_vbsrl_v((b), ((count)&15)));		\
@@ -204,29 +205,32 @@ lasx_set_d(int64_t  e3, int64_t  e2, int64_t  e1, int64_t  e0)
 static __rte_always_inline __m256i
 lasx_xvshuffle_b(__m256i a, __m256i b)
 {
+	__m256i dest = __lasx_xvslti_b(b, 0);
+	dest = __lasx_xvnor_v(dest, dest);
 	a = __lasx_xvshuf_b(a, a, __lasx_xvandi_b(b, 15));
-	return __lasx_xvandn_v(__lasx_xvslti_b(b, 0), a);
+	dest = __lasx_xvand_v(dest, a);
+	return dest;
 }
 
 
 #define MB(mask, i) -((mask >> i) & 1)
 
 static __rte_always_inline __m256i
-lasx_xvbitselmaski_h(int mask)
+lasx_xvbitseli_h(__m256i a, __m256i b, int mask)
 {
-	return lasx_set_h(
+	return __lasx_xvbitsel_v(a, b, lasx_set_h(
 		MB(mask, 7), MB(mask, 6), MB(mask, 5), MB(mask, 4),
 		MB(mask, 3), MB(mask, 2), MB(mask, 1), MB(mask, 0),
 		MB(mask, 7), MB(mask, 6), MB(mask, 5), MB(mask, 4),
-		MB(mask, 3), MB(mask, 2), MB(mask, 1), MB(mask, 0));
+		MB(mask, 3), MB(mask, 2), MB(mask, 1), MB(mask, 0)));
 }
 
 static __rte_always_inline __m256i
-lasx_xvbitselmaski_w(int mask)
+lasx_xvbitseli_w(__m256i a, __m256i b, int mask)
 {
-	return lasx_set_w(
+	return __lasx_xvbitsel_v(a, b, lasx_set_w(
 		MB(mask, 7), MB(mask, 6), MB(mask, 5), MB(mask, 4),
-		MB(mask, 3), MB(mask, 2), MB(mask, 1), MB(mask, 0));
+		MB(mask, 3), MB(mask, 2), MB(mask, 1), MB(mask, 0)));
 }
 
 #undef MB
@@ -244,8 +248,6 @@ __extension__ ({								\
 		dest = __lasx_xvbsrl_v((a), ((count)&15));			\
 	else if ((count) == 0)							\
 		dest = (b);							\
-	else if ((count) == 8)							\
-		dest = __lasx_xvpermi_w((a), (b), 0x4E);			\
 	else									\
 		dest = __lasx_xvor_v(__lasx_xvbsll_v((a), (16-((count)&15))),	\
 				__lasx_xvbsrl_v((b), ((count)&15)));		\
