@@ -267,21 +267,42 @@ _recv_raw_pkts_vec_lasx(struct ci_rx_queue *rxq, struct rte_mbuf **rx_pkts,
 		__lasx_xvst(__lasx_xvld((void *)&sw_ring[i], 0), (void *)&rx_pkts[i], 0);
 		__lasx_xvst(__lasx_xvld((void *)&sw_ring[i + 4], 0), (void *)&rx_pkts[i + 4], 0);
 
-		const __m128i raw_desc7 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 7), 0);
+		/* A.1 load raw_desc[7-0] */
+		__m128i raw_desc7 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 7), 0);
 		rte_compiler_barrier();
-		const __m128i raw_desc6 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 6), 0);
+		__m128i raw_desc6 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 6), 0);
 		rte_compiler_barrier();
-		const __m128i raw_desc5 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 5), 0);
+		__m128i raw_desc5 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 5), 0);
 		rte_compiler_barrier();
-		const __m128i raw_desc4 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 4), 0);
+		__m128i raw_desc4 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 4), 0);
 		rte_compiler_barrier();
-		const __m128i raw_desc3 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 3), 0);
+		__m128i raw_desc3 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 3), 0);
 		rte_compiler_barrier();
-		const __m128i raw_desc2 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 2), 0);
+		__m128i raw_desc2 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 2), 0);
 		rte_compiler_barrier();
-		const __m128i raw_desc1 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 1), 0);
+		__m128i raw_desc1 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 1), 0);
 		rte_compiler_barrier();
-		const __m128i raw_desc0 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 0), 0);
+		__m128i raw_desc0 = __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 0), 0);
+
+		/* Use acquire fence to order loads of descriptor qwords */
+		rte_atomic_thread_fence(rte_memory_order_acquire);
+
+		/* A.2 reload qword0 to make it ordered after qword1 load */
+		raw_desc7 = __lsx_vextrins_d(raw_desc7, __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 7), 0), 0x0);
+		rte_compiler_barrier();
+		raw_desc6 = __lsx_vextrins_d(raw_desc6, __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 6), 0), 0x0);
+		rte_compiler_barrier();
+		raw_desc5 = __lsx_vextrins_d(raw_desc5, __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 5), 0), 0x0);
+		rte_compiler_barrier();
+		raw_desc4 = __lsx_vextrins_d(raw_desc4, __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 4), 0), 0x0);
+		rte_compiler_barrier();
+		raw_desc3 = __lsx_vextrins_d(raw_desc3, __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 3), 0), 0x0);
+		rte_compiler_barrier();
+		raw_desc2 = __lsx_vextrins_d(raw_desc2, __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 2), 0), 0x0);
+		rte_compiler_barrier();
+		raw_desc1 = __lsx_vextrins_d(raw_desc1, __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 1), 0), 0x0);
+		rte_compiler_barrier();
+		raw_desc0 = __lsx_vextrins_d(raw_desc0, __lsx_vld(RTE_CAST_PTR(const __m128i *, rxdp + 0), 0), 0x0);
 
 		const __m256i raw_desc6_7 = __lasx_concat_128(raw_desc6, raw_desc7);
 		const __m256i raw_desc4_5 = __lasx_concat_128(raw_desc4, raw_desc5);
